@@ -54,6 +54,7 @@
  */
 struct hvt {
     uint8_t *mem;
+    size_t id;
     size_t mem_size;
     uint64_t cpu_cycle_freq;
     hvt_gpa_t cpu_boot_info_base;

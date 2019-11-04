@@ -175,7 +175,7 @@ case "${CONFIG_HOST}" in
         fi
 
         CONFIG_HVT=1
-        CONFIG_SPT=1
+        CONFIG_SPT=
         if ! command -v pkg-config >/dev/null; then
             die "pkg-config is required"
         fi
@@ -200,9 +200,9 @@ case "${CONFIG_HOST}" in
         if ! PKG_LIBS=${MAKECONF_SPT_LIBS} gcc_check_lib -lseccomp; then
             die "Could not link with -lseccomp"
         fi
-        [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_VIRTIO=1
-        [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_MUEN=1
-        [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_GENODE=1
+        [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_VIRTIO=
+        [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_MUEN=
+        [ "${CONFIG_ARCH}" = "x86_64" ] && CONFIG_GENODE=
         [ "${CONFIG_ARCH}" = "ppc64le" ] && CONFIG_HVT=
         ;;
     FreeBSD)

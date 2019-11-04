@@ -99,6 +99,16 @@ static void handle_mem(char *cmdarg, size_t *mem_size)
     *mem_size = mem;
 }
 
+static void handle_id(char *cmdarg, size_t *eptp_id)
+{
+    size_t id;
+    int rc = sscanf(cmdarg, "--id=%zd", &id);
+    if (rc != 1 || id >= 512) {
+        errx(1, "Malformed argument to --id");
+    }
+    *eptp_id = id;
+}
+
 static void usage(const char *prog)
 {
     fprintf(stderr, "usage: %s [ CORE OPTIONS ] [ MODULE OPTIONS ] [ -- ] "
@@ -107,6 +117,7 @@ static void usage(const char *prog)
     fprintf(stderr, "ARGS are optional arguments passed to the unikernel.\n");
     fprintf(stderr, "Core options:\n");
     fprintf(stderr, "  [ --mem=512 ] (guest memory in MB)\n");
+    fprintf(stderr, "  [  --id=0  ] (eptp index)\n");
     fprintf(stderr, "    --help (display this help)\n");
     fprintf(stderr, "    --version (display version information)\n");
     fprintf(stderr, "Compiled-in modules: ");
@@ -138,10 +149,11 @@ static void version(const char *prog)
 int main(int argc, char **argv)
 {
     size_t mem_size = 0x20000000;
+    size_t eptp_id = 0; 
     hvt_gpa_t gpa_ep, gpa_kend;
     const char *prog;
-    const char *elf_filename;
-    int elf_fd = -1;
+    const char *elf_filename, *load_filename;
+    int elf_fd = -1, load_fd = -1;
     int matched;
 
     prog = basename(*argv);
@@ -230,6 +242,12 @@ int main(int argc, char **argv)
             argc--;
             argv++;
         }
+        if (strncmp("--id=", *argv, 5) == 0) {
+            handle_id(*argv, &eptp_id);
+            matched = 1;
+            argc--;
+            argv++;
+        }
         if (handle_cmdarg(*argv, mft) == 0) {
             /* Handled by module, consume and go on to next arg */
             matched = 1;
@@ -256,6 +274,7 @@ int main(int argc, char **argv)
 
     hvt_mem_size(&mem_size);
     struct hvt *hvt = hvt_init(mem_size);
+    hvt->id = eptp_id;
 
     elf_load(elf_fd, elf_filename, hvt->mem, hvt->mem_size, HVT_GUEST_MIN_BASE,
             hvt_guest_mprotect, hvt, &gpa_ep, &gpa_kend);

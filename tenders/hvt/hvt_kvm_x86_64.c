@@ -138,7 +138,9 @@ void hvt_vcpu_init(struct hvt *hvt, hvt_gpa_t gpa_ep)
         .rflags = X86_RFLAGS_INIT,
         .rsp = hvt->mem_size - 8,
         .rdi = X86_BOOT_INFO_BASE,
+        .rbp = hvt->id,
     };
+    warnx("index read: %d\n", (int)hvt->id);
     ret = ioctl(hvb->vcpufd, KVM_SET_REGS, &regs);
     if (ret == -1)
         err(1, "KVM: ioctl (SET_REGS) failed");

@@ -37,7 +37,6 @@ int solo5_app_main(const struct solo5_start_info *si)
     while (*p++)
         len++;
     solo5_console_write(si->cmdline, len);
-
     puts("'\n");
 
     /* "Hello_Solo5" will be passed in via the command line */
