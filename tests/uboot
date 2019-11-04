@@ -1,0 +1,14 @@
+#!/bin/bash
+
+REPOSITORY=/home/between/blur/unikernels/asolo/solo5/tests 
+MIRAGES=/home/between/blur/unikernels/mirage-skeleton/tutorial 
+HVT_TENDER=/home/between/blur/unikernels/asolo/solo5/tenders/hvt/solo5-hvt 
+IMAGE=test_hello
+
+hvt_run() {
+    ${HVT_TENDER} --mem=2 "$@"
+}
+
+
+hvt_run ${REPOSITORY}/${IMAGE}/${IMAGE}.hvt "$@"
+
