@@ -236,7 +236,10 @@ void elf_load(int bin_fd, const char *bin_name, uint8_t *mem, size_t mem_size,
      */
     e_end = 0;
     Elf64_Addr plast_vaddr = 0;
-    for (Elf64_Half ph_i = 0; ph_i < ehdr->e_phnum; ph_i++) {
+    for (Elf64_Half ph_i = 0; ph_i < ehdr->e_phnum; ph_i++)
+    {
+        warnx("%s: phdr[%u] ready to load\n",
+              bin_name, ph_i);
         Elf64_Addr p_vaddr = phdr[ph_i].p_vaddr;
         Elf64_Xword p_filesz = phdr[ph_i].p_filesz;
         Elf64_Xword p_memsz = phdr[ph_i].p_memsz;
@@ -362,7 +365,7 @@ out_error:
     exit(1);
 
 out_invalid:
-    warnx("%s: Invalid or unsupported executable", bin_name);
+    warnx("%s: Invalid or unsupported executable\n", bin_name);
     free(ehdr);
     free(phdr);
     exit(1);

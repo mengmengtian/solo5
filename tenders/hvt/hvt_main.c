@@ -109,6 +109,18 @@ static void handle_id(char *cmdarg, size_t *eptp_id)
     *eptp_id = id;
 }
 
+static void handle_trampoline(char *cmdarg, int *load_fd, char *load_filename) {
+    
+    // int rc = sscanf(cmdarg, "--load=%s", load_filename);
+    // if (rc != 1) {
+    //     errx(1, "Malformed argument to --load");
+    // }
+
+    *load_fd = open(load_filename, O_RDONLY);
+    if (*load_fd == -1)
+        err(1, "%s: Could not open", load_filename);
+}
+
 static void usage(const char *prog)
 {
     fprintf(stderr, "usage: %s [ CORE OPTIONS ] [ MODULE OPTIONS ] [ -- ] "
@@ -117,7 +129,8 @@ static void usage(const char *prog)
     fprintf(stderr, "ARGS are optional arguments passed to the unikernel.\n");
     fprintf(stderr, "Core options:\n");
     fprintf(stderr, "  [ --mem=512 ] (guest memory in MB)\n");
-    fprintf(stderr, "  [  --id=0  ] (eptp index)\n");
+    fprintf(stderr, "  [ --id=0 ] (eptp index)\n");
+    fprintf(stderr, "  [ --load='' ] (trampoline file)\n");
     fprintf(stderr, "    --help (display this help)\n");
     fprintf(stderr, "    --version (display version information)\n");
     fprintf(stderr, "Compiled-in modules: ");
@@ -152,7 +165,8 @@ int main(int argc, char **argv)
     size_t eptp_id = 0; 
     hvt_gpa_t gpa_ep, gpa_kend;
     const char *prog;
-    const char *elf_filename, *load_filename;
+    const char *elf_filename;
+    char *load_filename = "trampoline";
     int elf_fd = -1, load_fd = -1;
     int matched;
 
@@ -248,6 +262,12 @@ int main(int argc, char **argv)
             argc--;
             argv++;
         }
+        if (strncmp("--load=", *argv, 7) == 0) {
+            handle_trampoline(*argv, &load_fd, load_filename);
+            matched = 1;
+            argc--;
+            argv++;
+        }
         if (handle_cmdarg(*argv, mft) == 0) {
             /* Handled by module, consume and go on to next arg */
             matched = 1;
@@ -275,6 +295,13 @@ int main(int argc, char **argv)
     hvt_mem_size(&mem_size);
     struct hvt *hvt = hvt_init(mem_size);
     hvt->id = eptp_id;
+
+    if (load_fd != -1) {
+        printf("load trampoline..\n");
+        elf_load(load_fd, load_filename, hvt->mem, hvt->mem_size, 0,
+            hvt_guest_mprotect, hvt, &gpa_ep, &gpa_kend);
+        close(load_fd);
+    }
 
     elf_load(elf_fd, elf_filename, hvt->mem, hvt->mem_size, HVT_GUEST_MIN_BASE,
             hvt_guest_mprotect, hvt, &gpa_ep, &gpa_kend);
