@@ -5,10 +5,16 @@ MIRAGES=/home/between/blur/unikernels/mirage-skeleton/tutorial
 HVT_TENDER=/home/between/blur/unikernels/asolo/solo5/tenders/hvt/solo5-hvt 
 IMAGE=test_hello
 
+case $1 in
+    1)
+    IMAGE=test_func
+    ;;
+esac
+
 hvt_run() {
-    ${HVT_TENDER} --mem=2 "$@"
+    echo ${REPOSITORY}/${IMAGE}
+    ${HVT_TENDER} --mem=2 --load=${REPOSITORY}/${IMAGE}/trampoline "$@"
 }
 
-
-hvt_run ${REPOSITORY}/${IMAGE}/${IMAGE}.hvt "$@"
+hvt_run --id=$1 ${REPOSITORY}/${IMAGE}/${IMAGE}.hvt
 

@@ -18,12 +18,59 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <stdarg.h>
+#include <stddef.h>
+
 #include "solo5.h"
 #include "../../bindings/lib.c"
+#include "../../bindings/printf.c"
+
+#define NSEC_PER_SEC 1000000000ULL
+
+__attribute__((__used__))
+static int source_id = 1;
+
+static void printf(const char *fmt, ...)
+    __attribute__((format(printf, 1, 2)));
+
+static void printf(const char *fmt, ...)
+{
+    char buffer[1024];
+    va_list args;
+    size_t size;
+
+    va_start(args, fmt);
+    size = vsnprintf(buffer, sizeof buffer, fmt, args);
+    va_end(args);
+
+    if (size >= sizeof buffer)
+    {
+        const char trunc[] = "(truncated)\n";
+        solo5_console_write(buffer, sizeof buffer - 1);
+        solo5_console_write(trunc, sizeof trunc - 1);
+    }
+    else
+    {
+        solo5_console_write(buffer, size);
+    }
+}
 
 static void puts(const char *s)
 {
     solo5_console_write(s, strlen(s));
+}
+
+static int call_trampoline(int n, uint64_t key, int unused, int target_id) {
+    int r = 0;
+    if (target_id >= 512)
+        return r;
+    n = n, key = key, unused = unused;
+    __asm__ volatile("callq 0xfc000;"
+                     "mov %%ebx, %0;"
+                     : "=r"(r)
+                     :
+                     : "memory");
+    return r;
 }
 
 int solo5_app_main(const struct solo5_start_info *si)
@@ -44,14 +91,26 @@ int solo5_app_main(const struct solo5_start_info *si)
         puts("SUCCESS\n");
 
     int r = 0;
-    __asm__ volatile("xor %%eax, %%eax;"
-                  "callq 0xfc000;"
-                  "mov %%eax, %0;"
-                : "=r"(r)
-                :
-                : "memory");
-    if (r == 4)
-        puts("SUCCESS\n");
+    solo5_time_t ta = 0, tb = 0;
+    ta = solo5_clock_monotonic();
+    call_trampoline(6, 0x1010101, 0, 1);
+    tb = solo5_clock_monotonic() + NSEC_PER_SEC;
+    printf("TIME USE: %llu\n",
+           (unsigned long long)(tb - ta));
+    if (r == 15)
+        puts("FUNC SUCCESS\n");
+    else
+        puts("FUNC NOT READY\n");
+    ta = tb = 0;
+    ta = solo5_clock_monotonic();
+    call_trampoline(6, 0x1010101, 0, 1);
+    tb = solo5_clock_monotonic() + NSEC_PER_SEC;
+    if (r == 15)
+        puts("2: FUNC SUCCESS\n");
+    printf("TIME USE: %llu\n",
+            (unsigned long long)(tb - ta));
+    if (r == 1)
+        puts("TRAMPOLINE SUCCESS\n");
 
     return SOLO5_EXIT_SUCCESS;
 }

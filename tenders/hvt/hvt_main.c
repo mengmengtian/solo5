@@ -111,10 +111,10 @@ static void handle_id(char *cmdarg, size_t *eptp_id)
 
 static void handle_trampoline(char *cmdarg, int *load_fd, char *load_filename) {
     
-    // int rc = sscanf(cmdarg, "--load=%s", load_filename);
-    // if (rc != 1) {
-    //     errx(1, "Malformed argument to --load");
-    // }
+    int rc = sscanf(cmdarg, "--load=%s", load_filename);
+    if (rc != 1) {
+        errx(1, "Malformed argument to --load");
+    }
 
     *load_fd = open(load_filename, O_RDONLY);
     if (*load_fd == -1)
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
     hvt_gpa_t gpa_ep, gpa_kend;
     const char *prog;
     const char *elf_filename;
-    char *load_filename = "trampoline";
+    char load_filename[50];
     int elf_fd = -1, load_fd = -1;
     int matched;
 
