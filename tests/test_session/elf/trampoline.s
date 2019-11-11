@@ -2,16 +2,13 @@ section .text
     global trampoline
     trampoline:
         xor eax, eax
-        mov edx, 0
         VMFUNC
-        mov ecx, edx
-        cmp rsi, 0x10101010
+        cmp rsi, 0x1000
         jnz RT
-        mov [0x108014], edx
-        call 0x8fa3
+        call 0x8fb1
         mov ebx, eax
-        mov ecx, [0x108014]
     RT:
+        mov rcx, 1
         xor eax, eax
         VMFUNC
         ret

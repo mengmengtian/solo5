@@ -28,7 +28,7 @@
 #define NSEC_PER_SEC 1000000000ULL
 
 __attribute__((__used__))
-static int source_id = 1;
+static int source_id = 0;
 
 static void printf(const char *fmt, ...)
     __attribute__((format(printf, 1, 2)));
@@ -60,14 +60,25 @@ static void puts(const char *s)
     solo5_console_write(s, strlen(s));
 }
 
-static int call_trampoline(int n, uint64_t key, int unused, int target_id) {
+__attribute__((__used__)) static void nop(void)
+{
+}
+
+static int call_trampoline(int n, uint64_t key, int target_id, uint64_t source_id)
+{
     int r = 0;
     if (target_id >= 512)
         return r;
-    n = n, key = key, unused = unused;
+    n = n, key = key;
+    __asm__ volatile("mov %0, %%edi;"
+                     "movq %1, %%rsi;"
+                     "mov %2, %%ecx;"
+                     "movq %3, %%r10;"
+                     :
+                     : "r"(n), "r"(key), "r"(target_id), "r"(source_id));
     __asm__ volatile("callq 0xfc000;"
                      "mov %%ebx, %0;"
-                     : "=r"(r)
+                     : "=m"(r)
                      :
                      : "memory");
     return r;
@@ -93,7 +104,15 @@ int solo5_app_main(const struct solo5_start_info *si)
     int r = 0;
     solo5_time_t ta = 0, tb = 0;
     ta = solo5_clock_monotonic();
-    call_trampoline(6, 0x1010101, 0, 1);
+    __asm__ volatile("mov $6, %edi;"
+                     "movq $0x1000, %rsi;"
+                     "mov $0, %ecx;"
+                     "movq $1, %r10;");
+    __asm__ volatile("callq 0xfc000;"
+                     "mov %%ebx, %0;"
+                     : "=m"(r)
+                     :
+                     : "memory");
     tb = solo5_clock_monotonic() + NSEC_PER_SEC;
     printf("TIME USE: %llu\n",
            (unsigned long long)(tb - ta));
@@ -103,9 +122,9 @@ int solo5_app_main(const struct solo5_start_info *si)
         puts("FUNC NOT READY\n");
     ta = tb = 0;
     ta = solo5_clock_monotonic();
-    call_trampoline(6, 0x1010101, 0, 1);
+    r = call_trampoline(7, 0x1000, 0, 1);
     tb = solo5_clock_monotonic() + NSEC_PER_SEC;
-    if (r == 15)
+    if (r == 21)
         puts("2: FUNC SUCCESS\n");
     printf("TIME USE: %llu\n",
             (unsigned long long)(tb - ta));

@@ -64,24 +64,12 @@ static int sum(int num) {
 
 DEBUG_VARIABLE
 static int source_id = 1;
+DEBUG_VARIABLE
+static int target_id = 0;
 
 static void puts(const char *s)
 {
     solo5_console_write(s, strlen(s));
-}
-
-static int call_trampoline(int n, uint64_t key, int unused, int target_id)
-{
-    int r = 0;
-    if (target_id >= 512)
-        return r;
-    n = n, key = key, unused = unused;
-    __asm__ volatile("callq 0xfc000;"
-                     "mov %%ebx, %0;"
-                     : "=r"(r)
-                     :
-                     : "memory");
-    return r;
 }
 
 int solo5_app_main(const struct solo5_start_info *si)
@@ -100,12 +88,21 @@ int solo5_app_main(const struct solo5_start_info *si)
     if (r == 15)
         puts("Success\n");
     puts("\n");
-    r = call_trampoline(5, 123, 1, 1);
+    __asm__ volatile("mov $5, %edi;"
+                     "movq $0x1000, %rsi;"
+                     "mov $0, %ecx;"  // target id
+                     "mov $1, %r10");   // source id
+    __asm__ volatile("callq 0xfc000;"
+                     "mov %%ebx, %0;"
+                     : "=m"(r)
+                     :
+                     : "memory");
+    printf("r = %d\n", r);
     if (r == 10)
         puts("TRAMPOLINE SUCCESS\n");
     printf("TIME USE: %llu\n",
            (unsigned long long)(tb - ta));
-    //while (1)
-    //{}
+    while (1)
+    {}
     return SOLO5_EXIT_SUCCESS;
 }
