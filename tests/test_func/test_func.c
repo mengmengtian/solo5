@@ -115,7 +115,8 @@ int solo5_app_main(const struct solo5_start_info *si)
     __asm__ volatile("mov $5, %edi;"
                      "movq $0x1000, %rsi;"
                      "mov $0, %ecx;"  // target id
-                     "mov $2, %r11");   // source id
+                     "mov $0, %r11;");   // source id
+                     
     __asm__ volatile("callq 0xfc000;"
                      "mov %%ebx, %0;"
                      : "=m"(r)

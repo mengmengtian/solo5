@@ -123,7 +123,7 @@ int solo5_app_main(const struct solo5_start_info *si)
     //     puts("FUNC NOT READY\n");
     // ta = tb = 0;
     ta = solo5_clock_monotonic();
-    r = call_trampoline(7, 0x1000, 0, 2);
+    r = call_trampoline(7, 0x1000, 0, 4);
     tb = solo5_clock_monotonic() + NSEC_PER_SEC;
     if (r == 21)
         puts("2: FUNC SUCCESS\n");
@@ -131,10 +131,6 @@ int solo5_app_main(const struct solo5_start_info *si)
             (unsigned long long)(tb - ta));
     if (r == 1)
         puts("TRAMPOLINE SUCCESS\n");
-    while (1)
-    {
-        /* code */
-    }
     
     return SOLO5_EXIT_SUCCESS;
 }
