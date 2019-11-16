@@ -87,50 +87,33 @@ static int call_trampoline(int n, uint64_t key, int target_id, uint64_t source_i
 
 int solo5_app_main(const struct solo5_start_info *si)
 {
-    puts("\n**** Solo5 standalone test_hello ****\n\n");
-    puts("Hello, World\nCommand line is: '");
+    (void)si;
 
-    size_t len = 0;
-    const char *p = si->cmdline;
-
-    while (*p++)
-        len++;
-    solo5_console_write(si->cmdline, len);
-    puts("'\n");
-
-    /* "Hello_Solo5" will be passed in via the command line */
-    if (strcmp(si->cmdline, "Hello_Solo5") == 0)
-        puts("SUCCESS\n");
+    uint64_t source_rsp = 0;
+    __asm__ volatile("mov %%rsp, %0;"
+                     : "=m"(source_rsp)
+                     :
+                     : "memory");
+    printf("rsp:0x%lx\n",source_rsp);
 
     int r = 0;
-    solo5_time_t ta = 0, tb = 0;
-    // ta = solo5_clock_monotonic();
-    // __asm__ volatile("mov $6, %edi;"
-    //                  "movq $0x1000, %rsi;"
-    //                  "mov $0, %ecx;"
-    //                  "movq $2, %r11;");
-    // __asm__ volatile("callq 0xfc000;"
-    //                  "mov %%ebx, %0;"
-    //                  : "=m"(r)
-    //                  :
-    //                  : "memory");
-    // tb = solo5_clock_monotonic() + NSEC_PER_SEC;
-    // printf("TIME USE: %llu\n",
-    //        (unsigned long long)(tb - ta));
-    // if (r == 15)
-    //     puts("FUNC SUCCESS\n");
-    // else
-    //     puts("FUNC NOT READY\n");
-    // ta = tb = 0;
+    solo5_time_t ta = 0, tb = 0;    
     ta = solo5_clock_monotonic();
     r = call_trampoline(7, 0x1000, 0, 4);
     tb = solo5_clock_monotonic() + NSEC_PER_SEC;
+
     if (r == 21)
-        puts("2: FUNC SUCCESS\n");
+        puts("FUNC SUCCESS\n");
     printf("TIME USE: %llu\n",
             (unsigned long long)(tb - ta));
     if (r == 1)
         puts("TRAMPOLINE SUCCESS\n");
+
+    __asm__ volatile("mov %%rsp, %0;"
+                     : "=m"(source_rsp)
+                     :
+                     : "memory");
+    printf("rsp:0x%lx\n",source_rsp);
     
     return SOLO5_EXIT_SUCCESS;
 }

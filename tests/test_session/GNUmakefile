@@ -22,3 +22,4 @@ include $(TOPDIR)/Makefile.common
 test_NAME := test_session
 
 include ../Makefile.tests
+LOCAL_CFLAGS += -Wno-unused-parameter
