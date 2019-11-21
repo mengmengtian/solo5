@@ -67,6 +67,16 @@ static void puts(const char *s)
     solo5_console_write(s, strlen(s));
 }
 
+static uint64_t rdtsc(void)
+{
+    uint32_t lo, hi;
+    __asm__ volatile("rdtsc"
+                : "=a"(lo), "=d"(hi)
+                :
+                :);
+    return (uint64_t)hi<<32 | lo;
+}
+
 int solo5_app_main(const struct solo5_start_info *si)
 {
     puts("\n**** I provide function 1: Accumulate sum.****\n\n");
@@ -77,13 +87,28 @@ int solo5_app_main(const struct solo5_start_info *si)
     while (*p)
         r = r * 10 - '0' + *p++;
     solo5_time_t ta = 0, tb = 0;
-    ta = solo5_clock_monotonic();
-    r = sum(r);
-    tb = solo5_clock_monotonic() + NSEC_PER_SEC;
+    ta = rdtsc();
+    sum(r);
+    tb = rdtsc() + NSEC_PER_SEC;
+    printf("TIME USE: %llu\n",
+           (unsigned long long)(tb - ta));
+
+    ta = rdtsc();
+    sum(r);
+    tb = rdtsc() + NSEC_PER_SEC;
+    printf("TIME USE: %llu\n",
+           (unsigned long long)(tb - ta));
+
+    ta = rdtsc();
+    r = sum(6);
+    tb = rdtsc() + NSEC_PER_SEC;
+    printf("TIME USE: %llu\n",
+           (unsigned long long)(tb - ta));
     if (r == 15)
         puts("Success\n");
     puts("\n");
     
+    ta = rdtsc();
     __asm__ volatile("mov $5, %edi;"
                      "movq $0x1000, %rsi;"
                      "mov $0, %ecx;"  // target id
@@ -94,6 +119,24 @@ int solo5_app_main(const struct solo5_start_info *si)
                      : "=m"(r)
                      :
                      : "memory");
+    tb = rdtsc() + NSEC_PER_SEC;
+    printf("r = %d\n", r);
+    if (r == 10)
+        puts("TRAMPOLINE SUCCESS\n");
+    printf("TIME USE: %llu\n",
+           (unsigned long long)(tb - ta));
+
+    __asm__ volatile("mov $5, %edi;"
+                     "movq $0x1000, %rsi;"
+                     "mov $0, %ecx;"  // target id
+                     "mov $0, %r11;");   // source id
+    ta = rdtsc();                 
+    __asm__ volatile("callq 0xfc000;"
+                     "mov %%ebx, %0;"
+                     : "=m"(r)
+                     :
+                     : "memory");
+    tb = rdtsc() + NSEC_PER_SEC;
     printf("r = %d\n", r);
     if (r == 10)
         puts("TRAMPOLINE SUCCESS\n");

@@ -64,6 +64,16 @@ __attribute__((__used__)) static void nop(void)
 {
 }
 
+static uint64_t rdtsc(void)
+{
+    uint32_t lo, hi;
+    __asm__ volatile("rdtsc"
+                : "=a"(lo), "=d"(hi)
+                :
+                :);
+    return (uint64_t)hi<<32 | lo;
+}
+
 static int call_trampoline(int n, uint64_t key, int target_id, uint64_t source_id)
 {
     int r = 0;
@@ -98,11 +108,11 @@ int solo5_app_main(const struct solo5_start_info *si)
 
     int r = 0;
     solo5_time_t ta = 0, tb = 0;    
-    ta = solo5_clock_monotonic();
-    r = call_trampoline(7, 0x1000, 0, 4);
-    tb = solo5_clock_monotonic() + NSEC_PER_SEC;
+    ta = rdtsc();
+    r = call_trampoline(6, 0x1000, 0, 4);
+    tb = rdtsc() + NSEC_PER_SEC;
 
-    if (r == 21)
+    if (r == 15)
         puts("FUNC SUCCESS\n");
     printf("TIME USE: %llu\n",
             (unsigned long long)(tb - ta));
