@@ -26,6 +26,7 @@
 #include "../../bindings/printf.c"
 
 #define NSEC_PER_SEC 1000000000ULL
+#define COUNT 1000
 
 static void printf(const char *fmt, ...)
     __attribute__((format(printf, 1, 2)));
@@ -58,7 +59,10 @@ static void printf(const char *fmt, ...)
 DEBUG_FUNCTION
 static int sum(int num) {
     int r = 0;
-    r = num * (num - 1) / 2;
+    for (int i = 1; i <= num; i++)
+    {
+        r += i;
+    }
     return r;
 }
 
@@ -83,29 +87,32 @@ int solo5_app_main(const struct solo5_start_info *si)
 
     const char *p = si->cmdline;
 
-    int r = 0;
+    int r = 0, res = 0;
     while (*p)
         r = r * 10 - '0' + *p++;
     solo5_time_t ta = 0, tb = 0;
     ta = rdtsc();
-    sum(r);
-    tb = rdtsc() + NSEC_PER_SEC;
+    res = sum(r);
+    tb = rdtsc();
+    if (res == 21)
+        printf("FIRST CALL: Success\n");
     printf("TIME USE: %llu\n",
-           (unsigned long long)(tb - ta));
+            (unsigned long long)(tb - ta));
 
-    ta = rdtsc();
-    sum(r);
-    tb = rdtsc() + NSEC_PER_SEC;
-    printf("TIME USE: %llu\n",
-           (unsigned long long)(tb - ta));
-
-    ta = rdtsc();
-    r = sum(6);
-    tb = rdtsc() + NSEC_PER_SEC;
-    printf("TIME USE: %llu\n",
-           (unsigned long long)(tb - ta));
-    if (r == 15)
-        puts("Success\n");
+    unsigned long long sum_time = 0;
+    for (int i = 0; i < COUNT; i++)
+    {
+        ta = rdtsc();
+        res = sum(r);
+        tb = rdtsc();
+        if (res == 21)
+            printf("Call %d:Success\n",i+1);
+        printf("TIME USE: %llu\n",
+             (unsigned long long)(tb - ta));
+        sum_time = sum_time + (unsigned long long)(tb-ta);
+    }
+    printf("AVERAGE TIME: %llu\n",sum_time/COUNT);
+    
     puts("\n");
     
     ta = rdtsc();
@@ -121,7 +128,7 @@ int solo5_app_main(const struct solo5_start_info *si)
                      : "memory");
     tb = rdtsc() + NSEC_PER_SEC;
     printf("r = %d\n", r);
-    if (r == 10)
+    if (r == 15)
         puts("TRAMPOLINE SUCCESS\n");
     printf("TIME USE: %llu\n",
            (unsigned long long)(tb - ta));
@@ -144,5 +151,7 @@ int solo5_app_main(const struct solo5_start_info *si)
            (unsigned long long)(tb - ta));
     while (1)
     {}
+    
+
     return SOLO5_EXIT_SUCCESS;
 }
