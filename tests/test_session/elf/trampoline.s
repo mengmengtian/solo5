@@ -7,7 +7,7 @@ section .text
 	    VMFUNC
         cmp rsi, 0x1000
         jnz RT     
-        call 0x8fe9
+        call 0x8ff9
         mov ebx, eax
     RT:
         mov rcx, r11

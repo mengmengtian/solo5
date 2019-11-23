@@ -26,6 +26,7 @@
 #include "../../bindings/printf.c"
 
 #define NSEC_PER_SEC 1000000000ULL
+#define COUNT 1000
 
 __attribute__((__used__))
 static int source_id = 0;
@@ -107,17 +108,32 @@ int solo5_app_main(const struct solo5_start_info *si)
     printf("rsp:0x%lx\n",source_rsp);
 
     int r = 0;
-    solo5_time_t ta = 0, tb = 0;    
+    solo5_time_t ta = 0, tb = 0;  
     ta = rdtsc();
     r = call_trampoline(6, 0x1000, 0, 4);
-    tb = rdtsc() + NSEC_PER_SEC;
-
-    if (r == 15)
+    tb = rdtsc();
+    printf("FIRST CALL: ");
+    if (r == 21)
         puts("FUNC SUCCESS\n");
     printf("TIME USE: %llu\n",
+        (unsigned long long)(tb - ta));  
+
+    unsigned long long sum_time = 0;
+    for (int i = 0; i < COUNT; i++)
+    {
+       ta = rdtsc();
+        r = call_trampoline(6, 0x1000, 0, 4);
+        tb = rdtsc();
+        printf("Call %d: ",i+1);
+        if (r == 21)
+           puts("FUNC SUCCESS\n");
+         printf("TIME USE: %llu\n",
             (unsigned long long)(tb - ta));
-    if (r == 1)
-        puts("TRAMPOLINE SUCCESS\n");
+        if (r == 1)
+           puts("TRAMPOLINE SUCCESS\n");
+        sum_time = sum_time + (unsigned long long)(tb-ta);
+    }
+    printf("AVERAGE TIME: %llu\n",sum_time/COUNT);
 
     __asm__ volatile("mov %%rsp, %0;"
                      : "=m"(source_rsp)
