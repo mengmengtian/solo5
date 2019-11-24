@@ -27,6 +27,7 @@
 
 #define NSEC_PER_SEC 1000000000ULL
 #define COUNT 1000
+#define SOURCE_ID 4
 
 __attribute__((__used__))
 static int source_id = 0;
@@ -88,7 +89,7 @@ static int call_trampoline(int n, uint64_t key, int target_id, uint64_t source_i
                      :
                      : "r"(n), "r"(key), "r"(target_id), "r"(source_id)
                      :"edi","rsi","ecx","r11");
-    __asm__ volatile("callq 0xfc000;"
+    __asm__ volatile("callq 0xfff00;"
                      "mov %%ebx, %0;"
                      : "=m"(r)
                      :
@@ -110,7 +111,7 @@ int solo5_app_main(const struct solo5_start_info *si)
     int r = 0;
     solo5_time_t ta = 0, tb = 0;  
     ta = rdtsc();
-    r = call_trampoline(6, 0x1000, 0, 4);
+    r = call_trampoline(6, 0x1000, 0, SOURCE_ID);
     tb = rdtsc();
     printf("FIRST CALL: ");
     if (r == 21)
@@ -122,7 +123,7 @@ int solo5_app_main(const struct solo5_start_info *si)
     for (int i = 0; i < COUNT; i++)
     {
        ta = rdtsc();
-        r = call_trampoline(6, 0x1000, 0, 4);
+        r = call_trampoline(6, 0x1000, 0, SOURCE_ID);
         tb = rdtsc();
         printf("Call %d: ",i+1);
         if (r == 21)

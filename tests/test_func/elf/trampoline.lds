@@ -1,4 +1,4 @@
-TEXT_START = 0x0fc000;
+TEXT_START = 0x0fff00;
 
 ENTRY(trampoline)
 

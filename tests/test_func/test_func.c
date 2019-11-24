@@ -81,10 +81,27 @@ static uint64_t rdtsc(void)
     return (uint64_t)hi<<32 | lo;
 }
 
+void install()
+{
+    __asm__ volatile("mov %rsp, %r10;");
+    for (int i = 1; i <= 10; i++)
+    {
+        uint64_t target_rsp = 0x1fffffff - (i<<18);
+        __asm__ volatile("mov %0, %%rsp;"
+                        "push $0"
+                     :
+                     : "r"(target_rsp)
+                     :"rsp");
+        (void)target_rsp;
+
+    }
+    __asm__ volatile("mov %r10, %rsp;");
+}
+
 int solo5_app_main(const struct solo5_start_info *si)
 {
+    install();
     puts("\n**** I provide function 1: Accumulate sum.****\n\n");
-
     const char *p = si->cmdline;
 
     int r = 0, res = 0;
@@ -115,23 +132,6 @@ int solo5_app_main(const struct solo5_start_info *si)
     
     puts("\n");
     
-    ta = rdtsc();
-    __asm__ volatile("mov $5, %edi;"
-                     "movq $0x1000, %rsi;"
-                     "mov $0, %ecx;"  // target id
-                     "mov $0, %r11;");   // source id
-                     
-    __asm__ volatile("callq 0xfc000;"
-                     "mov %%ebx, %0;"
-                     : "=m"(r)
-                     :
-                     : "memory");
-    tb = rdtsc() + NSEC_PER_SEC;
-    printf("r = %d\n", r);
-    if (r == 15)
-        puts("TRAMPOLINE SUCCESS\n");
-    printf("TIME USE: %llu\n",
-           (unsigned long long)(tb - ta));
 
     __asm__ volatile("mov $5, %edi;"
                      "movq $0x1000, %rsi;"
